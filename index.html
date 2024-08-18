@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Dice Roll Simulator</title>
+    <style>
+body {
+  margin: 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(174, 0, 255, 0.6), rgba(255, 72, 0, 0.6));
+  background-size: 400% 400%;
+  animation: gradientAnimation 15s ease infinite;
+  font-family: Arial, sans-serif;
+  position: relative;
+}
+
+.glass {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(20px); /* Apply blur for glass effect */
+  z-index: -1; /* Ensure it stays behind the other elements */
+}
+
+.glowing {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 0 30px rgba(255, 255, 255, 0.6), 0 0 45px rgba(255, 255, 255, 0.4);
+  animation: glowFloat 10s ease-in-out infinite, glow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes glowFloat {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(150px, -100px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.6), 0 0 20px rgba(255, 255, 255, 0.4), 0 0 30px rgba(255, 255, 255, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 0 0 40px rgba(255, 255, 255, 0.6), 0 0 60px rgba(255, 255, 255, 0.4);
+  }
+}
+
+.glowing:nth-child(1) {
+  top: 15%;
+  left: 10%;
+  width: 60px;
+  height: 60px;
+  animation-duration: 12s;
+}
+
+.glowing:nth-child(2) {
+  top: 40%;
+  left: 30%;
+  width: 80px;
+  height: 80px;
+  animation-duration: 14s;
+}
+
+.glowing:nth-child(3) {
+  top: 65%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  animation-duration: 16s;
+}
+
+.glowing:nth-child(4) {
+  top: 85%;
+  left: 75%;
+  width: 50px;
+  height: 50px;
+  animation-duration: 18s;
+}
+
+
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+
+      #roll-button {
+        position: absolute;
+        top: 2%;
+        left: 2%;
+        padding: 10px 20px;
+        font-size: 1em;
+        background-color: #008cba;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        z-index: 1; /* Ensure button is on top */
+      }
+
+      #roll-button:hover {
+        background-color: #005f5f;
+      }
+
+      #dice-select {
+        position: absolute;
+        top: 2%;
+        left: 10%;
+        padding: 10px;
+        font-size: 1em;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 1; /* Ensure select box is on top */
+      }
+
+      #result {
+        position: absolute;
+        top: 10%;
+        left: 2%;
+        font-size: 1.5em;
+        color: #fff;
+        background-color: rgba(5, 255, 234, 0.5);
+        padding: 10px;
+        border-radius: 5px;
+        max-width: 90%;
+        text-align: center;
+        white-space: nowrap; /* Prevent wrapping */
+        overflow: hidden; /* Hide overflow */
+        text-overflow: ellipsis; /* Add ellipsis if text overflows */
+        z-index: 1; /* Ensure result display is on top */
+      }
+
+      @media (max-width: 600px) {
+        #roll-button, #dice-select {
+          font-size: 0.8em;
+          padding: 8px;
+        }
+        #dice-select {
+          position: absolute;
+          top: 2%;
+          left: 20%;
+        }
+        #result {
+          font-size: 1.2em;
+          max-width: 95%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="glass"></div>
+  
+  <!-- Glowing floating elements -->
+  <div class="glowing"></div>
+  <div class="glowing"></div>
+  <div class="glowing"></div>
+  <div class="glowing"></div>
+  
+    <select id="dice-select">
+      <option value="1">1 Die</option>
+      <option value="2">2 Dice</option>
+    </select>
+    <button id="roll-button">Roll Dice</button>
+    <div id="result">Roll result will appear here.</div>
+
+    <!-- Add audio elements -->
+    <audio id="roll-sound" src="roll.mp3"></audio>
+    <audio id="land-sound" src="land.mp3"></audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+      let scene = new THREE.Scene();
+      let camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      let renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x000000, 0); // This should be fine if you want transparency
+      document.body.appendChild(renderer.domElement);
+
+      let ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      let directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+      directionalLight.position.set(5, 10, 7.5);
+      scene.add(directionalLight);
+
+      let dice = [];
+      let loader = new THREE.GLTFLoader();
+      loader.load("Dice.glb", function (gltf) {
+        for (let i = 0; i < 2; i++) {
+          let die = gltf.scene.clone();
+          die.scale.set(10.5, 10.5, 10.5); // Scale dice up by a factor of 7 (7 x 1.5 ≈ 10.5)
+          die.position.x = i * 7 - 3.5; // Adjust position for the new size
+          die.position.y = 0; // Initial y position
+          dice.push(die);
+          scene.add(die);
+        }
+        render();
+      });
+
+      function adjustCamera() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }
+
+      window.addEventListener('resize', () => {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        adjustCamera();
+      });
+
+      camera.position.z = 25; // Adjusted for larger dice
+
+      // Corrected Predefined Rotations for Each Face of the Dice
+      const diceRotations = [
+        { x: 0, y: 0, z: 0 }, // 4 (was 1)
+        { x: Math.PI / 2, y: 0, z: 0 }, // 6 (was 2)
+        { x: 0, y: -Math.PI / 2, z: 0 }, // 5 (was 3)
+        { x: 0, y: Math.PI / 2, z: 0 }, // 2 (was 4)
+        { x: -Math.PI / 2, y: 0, z: 0 }, // 1 (was 5)
+        { x: Math.PI, y: 0, z: 0 }, // 3 (was 6)
+      ];
+
+      // Corrected Mapping of Rotations to Dice Face Values
+      const diceValues = [5, 4, 6, 1, 3, 2];
+
+      function render() {
+        requestAnimationFrame(render);
+        renderer.render(scene, camera);
+      }
+
+      document.getElementById("roll-button").addEventListener("click", () => {
+  // Play the roll sound immediately
+  document.getElementById("roll-sound").play();
+
+  let diceCount = parseInt(document.getElementById("dice-select").value);
+  let results = [];
+  let diceAnimated = 0;
+
+  if (dice.length >= diceCount) {
+    for (let i = 0; i < diceCount; i++) {
+      let randomIndex = Math.floor(Math.random() * diceRotations.length);
+      let targetRotation = diceRotations[randomIndex];
+      let result = diceValues[randomIndex];
+
+      animateDiceRoll(dice[i], targetRotation, result, () => {
+        diceAnimated++;
+        results[i] = result;
+        if (diceAnimated === diceCount) {
+          // Play the land sound with a 0.5 second delay
+          setTimeout(() => {
+            document.getElementById("land-sound").play();
+          }, 500);
+
+          displayResult(results);
+        }
+      });
+    }
+  }
+});
+
+
+      function animateDiceRoll(die, targetRotation, result, callback) {
+        let animationDuration = 5; // Duration of rolling in seconds
+        let startTime = performance.now();
+        let initialPosition = { x: die.position.x, y: 20, z: 0 }; // Starting position (above the ground)
+        let finalPosition = { x: die.position.x, y: -10, z: 0 }; // Ground level position below the screen
+
+        let currentRotation = {
+          x: die.rotation.x,
+          y: die.rotation.y,
+          z: die.rotation.z,
+        };
+
+        function animateDice(timestamp) {
+          let elapsedTime = (timestamp - startTime) / 1000;
+          let progress = Math.min(elapsedTime / animationDuration, 1);
+
+          // Rotate the dice quickly to achieve multiple rotations
+          die.rotation.x =
+            currentRotation.x +
+            (targetRotation.x - currentRotation.x + Math.PI * 8) * easeOutCubic(progress); // 4 full rotations (2π * 4)
+          die.rotation.y =
+            currentRotation.y +
+            (targetRotation.y - currentRotation.y + Math.PI * 8) * easeOutCubic(progress);
+          die.rotation.z =
+            currentRotation.z +
+            (targetRotation.z - currentRotation.z + Math.PI * 8) * easeOutCubic(progress);
+
+          // Add a slower shake effect with reduced randomness
+          die.rotation.x += Math.random() * 0.05 - 0.025; // Slow and subtle shake
+          die.rotation.y += Math.random() * 0.05 - 0.025;
+          die.rotation.z += Math.random() * 0.05 - 0.025;
+
+          // Animate the dice position to simulate it falling to the ground
+          die.position.y =
+            initialPosition.y + (finalPosition.y - initialPosition.y) * easeOutBounce(progress);
+
+          if (progress < 1) {
+            requestAnimationFrame(animateDice);
+          } else {
+            // Snap to the exact target rotation and position at the end
+            die.rotation.set(targetRotation.x, targetRotation.y, targetRotation.z);
+            die.position.set(finalPosition.x, finalPosition.y, finalPosition.z);
+            callback();
+          }
+        }
+
+        requestAnimationFrame(animateDice);
+      }
+
+      function easeOutBounce(t) {
+        const n1 = 7.5625;
+        const d1 = 2.75;
+        if (t < 1 / d1) {
+          return n1 * t * t;
+        } else if (t < 2 / d1) {
+          return n1 * (t -= 1.5 / d1) * t + 0.75;
+        } else if (t < 2.5 / d1) {
+          return n1 * (t -= 2.25 / d1) * t + 0.9375;
+        } else {
+          return n1 * (t -= 2.625 / d1) * t + 0.984375;
+        }
+      }
+
+      function easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      function displayResult(results) {
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = "Dice Roll Results: " + results.join(" | ");
+      }
+    </script>
+  </body>
+</html>
